@@ -20,8 +20,12 @@ module IntuitIdsAggcat
         # consumer_key and consumer_secret will be retrieved from the Configuration class if not provided
         def get_institutions oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens("default"), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
           response = oauth_get_request "https://financialdatafeed.platform.intuit.com/rest-war/v1/institutions", oauth_token_info, consumer_key, consumer_secret
-          institutions = Institutions.load_from_xml(response[:response_xml].root)
-          institutions.institutions
+          if response[:response_code] == "200"
+            institutions = Institutions.load_from_xml(response[:response_xml].root)
+            institutions.institutions
+          else
+            return nil
+          end
         end
 
         ##
@@ -32,6 +36,15 @@ module IntuitIdsAggcat
           institutions = InstitutionDetail.load_from_xml(response[:response_xml].root)
           institutions
         end
+
+        ##
+        # Get a specific account for a customer from aggregation at Intuit.
+        # username and account ID must be provided, if no oauth_token_info is provided, new tokens will be provisioned using username
+        def get_account username, account_id, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
+          url = "https://financialdatafeed.platform.intuit.com/rest-war/v1/accounts/#{account_id}"
+          oauth_get_request url, oauth_token_info
+        end
+
 
         ##
         # Deletes the customer's accounts from aggregation at Intuit.
@@ -66,7 +79,9 @@ module IntuitIdsAggcat
         #    challenge_session_id: challenge session ID to pass to challenge_response if this is a challenge
         #    challenge_node_id   : challenge node ID to pass to challenge_response if this is a challenge 
         #    description         : text description of the result of the discover request
+
         def discover_and_add_accounts_with_credentials institution_id, username, creds_hash, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret, timeout = 30
+
           url = "https://financialdatafeed.platform.intuit.com/rest-war/v1/institutions/#{institution_id}/logins"
           credentials_array = []
           creds_hash.each do |k,v|
@@ -187,8 +202,13 @@ module IntuitIdsAggcat
           options = options.merge({ :proxy => IntuitIdsAggcat.config.proxy}) if !IntuitIdsAggcat.config.proxy.nil?
           consumer = OAuth::Consumer.new(consumer_key, consumer_secret, options)
           access_token = OAuth::AccessToken.new(consumer, oauth_token, oauth_token_secret)
-          response = access_token.get(url, { "Content-Type"=>'application/xml', 'Host' => 'financialdatafeed.platform.intuit.com' })
-          response_xml = REXML::Document.new response.body
+          begin
+            response = access_token.get(url, { "Content-Type"=>'application/xml', 'Host' => 'financialdatafeed.platform.intuit.com' })
+            response_xml = REXML::Document.new response.body
+          rescue REXML::ParseException => msg
+              #Rails.logger.error "REXML Parse Exception"
+              return nil
+          end
           { :response_code => response.code, :response_xml => response_xml }
         end
 

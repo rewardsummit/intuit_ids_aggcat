@@ -111,7 +111,7 @@ EOF_XML
         end
 
         def get_tokens username, issuer_id = IntuitIdsAggcat.config.issuer_id, oauth_consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, oauth_consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret, certificate_path = IntuitIdsAggcat.config.certificate_path, certificate_string = IntuitIdsAggcat.config.certificate_string, certificate_password = IntuitIdsAggcat.config.certificate_password
-          oauth_token_info = get_oauth_info issuer_id, username, oauth_consumer_key, oauth_consumer_secret, certificate_path, certificate_string, certificate_password
+            oauth_token_info = get_oauth_info issuer_id, username, oauth_consumer_key, oauth_consumer_secret, certificate_path, certificate_string, certificate_password
         end
 
       end

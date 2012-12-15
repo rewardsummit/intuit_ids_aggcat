@@ -21,21 +21,5 @@ describe IntuitIdsAggcat::Client::Saml do
     tokens[:oauth_token].should_not be_nil
     tokens[:token_expiry].should_not be_nil
   end
-
-  it "should return different tokens for different usernames" do
-    path = Pathname.new("spec/config/real_config.yml")
-    config = YAML::load(ERB.new(File.read(path)).result)
-    IntuitIdsAggcat.config(config)
-    tokens = IntuitIdsAggcat::Client::Saml.get_tokens "test"
-    tokens[:oauth_token_secret].should_not be_nil
-    tokens[:oauth_token].should_not be_nil
-    tokens[:token_expiry].should_not be_nil
-    tokens2 = IntuitIdsAggcat::Client::Saml.get_tokens "test2"
-    tokens2[:oauth_token_secret].should_not be_nil
-    tokens2[:oauth_token].should_not be_nil
-    tokens2[:token_expiry].should_not be_nil
-    tokens[:oauth_token_secret].should_not eql(tokens2[:oauth_token_secret])
-    tokens[:oauth_token].should_not eql(tokens2[:oauth_token])
-  end
 end
 

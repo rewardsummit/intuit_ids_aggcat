@@ -65,7 +65,7 @@ describe IntuitIdsAggcat::Client::Services do
 
     # get transactions from 90 days ago until current
     start = Time.now - (90 * 24 * 60 * 60)
-    y = IntuitIdsAggcat::Client::Services.get_account_transactions "9cj2hbjfgh47cna72", x.banking_accounts[0].account_id, start
+    y = IntuitIdsAggcat::Client::Services.get_account_transactions 1, x.banking_accounts[0].account_id, start
     y.should_not be_nil
     y.banking_transactions[0].id.should_not be_nil
     y.banking_transactions[0].amount.should_not be_nil
