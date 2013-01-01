@@ -178,7 +178,7 @@ module IntuitIdsAggcat
     array_node :loan_accounts, "LoanAccount", :class => LoanAccount, :default_value => nil
     array_node :investment_accounts, "InvestmentAccount", :class => InvestmentAccount, :default_value => nil
     #array_node :rewards_accounts, "RewardsAccount", :default_value => nil
-    #array_node :other_accounts, "OtherAccount", :default_value => nil
+    array_node :other_accounts, "OtherAccount", :class => OtherAccount, :default_value => nil
   end
 
   class Account
@@ -219,6 +219,10 @@ module IntuitIdsAggcat
     numeric_node :maturity_amount, "maturityAmount", :default_value => nil
   end
   
+  class OtherAccount < Account
+    include XML::Mapping
+  end
+
   class InvestmentAccount < Account
     include XML::Mapping
     
