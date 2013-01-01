@@ -41,6 +41,7 @@ module IntuitIdsAggcat
   class CreditAccount < Account; end
   class InvestmentAccount < Account; end     
   class LoanAccount < Account; end    
+  class OtherAccount < Account; end  
   class Choice; end
   class Transaction; end
   class BankingTransaction < Transaction; end
@@ -178,7 +179,7 @@ module IntuitIdsAggcat
     array_node :loan_accounts, "LoanAccount", :class => LoanAccount, :default_value => nil
     array_node :investment_accounts, "InvestmentAccount", :class => InvestmentAccount, :default_value => nil
     #array_node :rewards_accounts, "RewardsAccount", :default_value => nil
-    #array_node :other_accounts, "OtherAccount", :default_value => nil
+    array_node :other_accounts, "OtherAccount", :class => OtherAccount, :default_value => nil
   end
 
   class Account
@@ -217,6 +218,11 @@ module IntuitIdsAggcat
     numeric_node :interest_prior_amount_ytd, "interestPriorAmountYtd", :default_value => nil
     date_time_node :maturity_date, "maturityDate", :default_value => nil
     numeric_node :maturity_amount, "maturityAmount", :default_value => nil
+  end
+
+  class OtherAccount < Account
+    include XML::Mapping
+    use_mapping :_default
   end
   
   class InvestmentAccount < Account
