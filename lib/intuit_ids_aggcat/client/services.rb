@@ -117,9 +117,26 @@ module IntuitIdsAggcat
         ##
         # Gets all accounts for a customer
         def get_customer_accounts username, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
-          url = "https://financialdatafeed.platform.intuit.com/rest-war/v1/accounts/"
+          url = "https://financialdatafeed.platform.intuit.com/v1/accounts/"
           response = oauth_get_request url, oauth_token_info
           accounts = AccountList.load_from_xml(response[:response_xml].root)
+        end
+
+        ##
+        # Gets accounts for a specific customer login_id
+        def get_login_accounts login_id, username, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
+          url = "https://financialdatafeed.platform.intuit.com/v1/logins/#{login_id}/accounts"
+          response = oauth_get_request url, oauth_token_info
+          accounts = AccountList.load_from_xml(response[:response_xml].root)
+        end
+
+        ##
+        # Explicitly refreshes the customer account at an institution
+        def update_institution_login_explicit_refresh login_id, username, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
+          url = "https://financialdatafeed.platform.intuit.com/v1/logins/#{login_id}?refresh=true"
+          body = InstitutionLogin.new.save_to_xml.to_s
+          response = oauth_put_request url, oauth_token_info, body
+          return response
         end
 
         ##
@@ -207,6 +224,27 @@ module IntuitIdsAggcat
             response_xml = REXML::Document.new response.body
           rescue REXML::ParseException => msg
               #Rails.logger.error "REXML Parse Exception"
+              return nil
+          end
+          { :response_code => response.code, :response_xml => response_xml }
+        end
+
+        ##
+        # Helper method to issue put requests
+        def oauth_put_request url, oauth_token_info, body = nil, consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret, timeout = 120
+          oauth_token = oauth_token_info[:oauth_token]
+          oauth_token_secret = oauth_token_info[:oauth_token_secret]
+
+          options = { :request_token_path => 'https://financialdatafeed.platform.intuit.com', :timeout => timeout, :http_method => :put } 
+          options = options.merge({ :proxy => IntuitIdsAggcat.config.proxy}) if !IntuitIdsAggcat.config.proxy.nil?
+          consumer = OAuth::Consumer.new(consumer_key, consumer_secret, options)
+          access_token = OAuth::AccessToken.new(consumer, oauth_token, oauth_token_secret)
+          begin
+            response = access_token.put(url, body, { "Content-Type"=>'application/xml', 'Host' => 'financialdatafeed.platform.intuit.com' })
+            response_xml = REXML::Document.new response.body
+          rescue REXML::ParseException => msg
+              #Rails.logger.error "REXML Parse Exception"
+              #Rails.logger.error msg
               return nil
           end
           { :response_code => response.code, :response_xml => response_xml }
