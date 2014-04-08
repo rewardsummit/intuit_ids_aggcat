@@ -83,6 +83,31 @@ describe IntuitIdsAggcat::Client::Services do
 
   end
 
+  it 'should setup aggregation with username/password, get accounts, get details for one account, then delete the customer' do
+    # delete customer to ensure we are starting from scratch
+    IntuitIdsAggcat::Client::Services.delete_customer "9cj2hbjfgh47cna72"
+
+    # discover accounts
+    x = IntuitIdsAggcat::Client::Services.discover_and_add_accounts_with_credentials 100000, "9cj2hbjfgh47cna72", { "Banking Userid" => "direct", "Banking Password" => "anyvalue" }
+    x[:discover_response][:response_code].should == "201"
+    x[:accounts].should_not be_nil
+    x[:accounts].banking_accounts.count.should be > 2
+    x = IntuitIdsAggcat::Client::Services.get_customer_accounts "9cj2hbjfgh47cna72"
+    x.should_not be_nil
+    x.banking_accounts.count.should be > 2
+    # get details for one account
+    detail_account = x.banking_accounts[0].account_id
+    x = IntuitIdsAggcat::Client::Services.get_account "9cj2hbjfgh47cna72", detail_account
+    x.should_not be_nil
+    x.banking_accounts.should_not be_nil
+    x.banking_accounts[0].account_id.should == detail_account
+    x.banking_accounts[0].balance_amount.should_not be_nil
+    # delete customer
+    x = IntuitIdsAggcat::Client::Services.delete_customer "9cj2hbjfgh47cna72"
+    x[:response_code].should == "200"
+
+  end
+
   it 'should setup aggregation with text challenge then delete the customer' do
     IntuitIdsAggcat::Client::Services.delete_customer "9cj2hbjfgh47cna72"
     x = IntuitIdsAggcat::Client::Services.discover_and_add_accounts_with_credentials 100000, "9cj2hbjfgh47cna72", { "Banking Userid" => "tfa_text", "Banking Password" => "anyvalue" } 
