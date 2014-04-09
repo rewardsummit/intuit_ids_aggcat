@@ -42,7 +42,8 @@ module IntuitIdsAggcat
         # username and account ID must be provided, if no oauth_token_info is provided, new tokens will be provisioned using username
         def get_account username, account_id, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
           url = "https://financialdatafeed.platform.intuit.com/rest-war/v1/accounts/#{account_id}"
-          oauth_get_request url, oauth_token_info
+          response = oauth_get_request url, oauth_token_info
+          account = AccountList.load_from_xml(response[:response_xml].root)
         end
 
 
@@ -201,7 +202,7 @@ module IntuitIdsAggcat
           elsif daa[:response_code] == "500"
             { update_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Internal server error." }
           elsif daa[:response_code] == "503"
-            { update_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Problem at the finanical institution." }
+            { update_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Problem at the financial institution." }
           else
             { update_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Unknown error." }
           end
@@ -234,7 +235,7 @@ module IntuitIdsAggcat
           elsif daa[:response_code] == "500"
             { discover_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Internal server error." }
           elsif daa[:response_code] == "503"
-            { discover_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Problem at the finanical institution." }
+            { discover_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Problem at the financial institution." }
           else
             { discover_response: daa, accounts: nil, challenge_type: challenge_type, challenge: nil, description: "Unknown error." }
           end
