@@ -481,6 +481,7 @@ module IntuitIdsAggcat
 
   class TransactionList
     include XML::Mapping
+    text_node :not_refreshed_reason, "@notRefreshedReason", :default_value => nil
     array_node :banking_transactions, "BankingTransaction", :class => BankingTransaction, :default_value => nil
     array_node :credit_card_transactions, "CreditCardTransaction", :class => CreditCardTransaction, :default_value => nil
     array_node :investment_banking_transactions, "InvestmentBankingTransaction", :class => InvestmentBankingTransaction, :default_value => nil
