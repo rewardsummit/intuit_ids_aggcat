@@ -184,6 +184,7 @@ module IntuitIdsAggcat
 
   class Account
     include XML::Mapping  
+    text_node :aggregation_status_code, "aggrStatusCode", :default_value => nil
     numeric_node :account_id, "accountId", :default_value => nil
     text_node :status, "status", :default_value => nil
     text_node :account_number, "accountNumber", :default_value => nil

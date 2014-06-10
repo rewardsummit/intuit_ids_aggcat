@@ -114,6 +114,20 @@ module IntuitIdsAggcat
           daa = oauth_post_request url, il.save_to_xml.to_s, oauth_token_info, { "challengeSessionId" => challenge_session_id, "challengeNodeId" => challenge_node_id }
           discover_account_data_to_hash daa
         end
+        
+        # needed for follow-up Request to provide challenge data (Update Credentials)
+        # https://developer.intuit.com/docs/0020_customeraccountdata/customer_account_data_api/0020_api_documentation/0075_updateinstitutionlogin
+        def put_challenge_data login_id, username, response, challenge_session_id, challenge_node_id, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
+          url = "https://financialdatafeed.platform.intuit.com/v1/logins/#{login_id}"
+          if !(response.kind_of?(Array) || response.respond_to?('each'))
+            response = [response]
+          end
+          cr = IntuitIdsAggcat::ChallengeResponses.new
+          cr.response = response
+          il = IntuitIdsAggcat::InstitutionLogin.new
+          il.challenge_responses = cr
+          daa = oauth_put_request url, oauth_token_info, il.save_to_xml.to_s, { "challengeSessionId" => challenge_session_id, "challengeNodeId" => challenge_node_id }
+        end
 
         ##
         # Gets all accounts for a customer
@@ -286,23 +300,26 @@ module IntuitIdsAggcat
 
         ##
         # Helper method to issue put requests
-        def oauth_put_request url, oauth_token_info, body = nil, consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret, timeout = 120
+        def oauth_put_request url, oauth_token_info, body = nil,  headers = {}, consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret, timeout = 120
           oauth_token = oauth_token_info[:oauth_token]
           oauth_token_secret = oauth_token_info[:oauth_token_secret]
 
-          options = { :request_token_path => 'https://financialdatafeed.platform.intuit.com', :timeout => timeout, :http_method => :put } 
+          options = { :request_token_path => 'https://financialdatafeed.platform.intuit.com', :timeout => timeout, :http_method => :put }
           options = options.merge({ :proxy => IntuitIdsAggcat.config.proxy}) if !IntuitIdsAggcat.config.proxy.nil?
           consumer = OAuth::Consumer.new(consumer_key, consumer_secret, options)
           access_token = OAuth::AccessToken.new(consumer, oauth_token, oauth_token_secret)
           begin
-            response = access_token.put(url, body, { "Content-Type"=>'application/xml', 'Host' => 'financialdatafeed.platform.intuit.com' })
+            response = access_token.put(url, body, { "Content-Type"=>'application/xml', 'Host' => 'financialdatafeed.platform.intuit.com' }.merge(headers))
             response_xml = REXML::Document.new response.body
           rescue REXML::ParseException => msg
-              #Rails.logger.error "REXML Parse Exception"
-              #Rails.logger.error msg
-              return nil
+            return nil
           end
-          { :response_code => response.code, :response_xml => response_xml }
+          challenge_session_id = challenge_node_id = nil
+          unless response["challengeSessionId"].nil?
+            challenge_session_id = response["challengeSessionId"]
+            challenge_node_id = response["challengeNodeId"]
+          end
+          { :challenge_session_id => challenge_session_id, :challenge_node_id => challenge_node_id, :response_code => response.code, :response_xml => response_xml }
         end
 
         ##
