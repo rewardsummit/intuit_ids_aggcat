@@ -286,23 +286,26 @@ module IntuitIdsAggcat
 
         ##
         # Helper method to issue put requests
-        def oauth_put_request url, oauth_token_info, body = nil, consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret, timeout = 120
+        def oauth_put_request url, oauth_token_info, body = nil,  headers = {}, consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret, timeout = 120
           oauth_token = oauth_token_info[:oauth_token]
           oauth_token_secret = oauth_token_info[:oauth_token_secret]
 
-          options = { :request_token_path => 'https://financialdatafeed.platform.intuit.com', :timeout => timeout, :http_method => :put } 
+          options = { :request_token_path => 'https://financialdatafeed.platform.intuit.com', :timeout => timeout, :http_method => :put }
           options = options.merge({ :proxy => IntuitIdsAggcat.config.proxy}) if !IntuitIdsAggcat.config.proxy.nil?
           consumer = OAuth::Consumer.new(consumer_key, consumer_secret, options)
           access_token = OAuth::AccessToken.new(consumer, oauth_token, oauth_token_secret)
           begin
-            response = access_token.put(url, body, { "Content-Type"=>'application/xml', 'Host' => 'financialdatafeed.platform.intuit.com' })
+            response = access_token.put(url, body, { "Content-Type"=>'application/xml', 'Host' => 'financialdatafeed.platform.intuit.com' }.merge(headers))
             response_xml = REXML::Document.new response.body
           rescue REXML::ParseException => msg
-              #Rails.logger.error "REXML Parse Exception"
-              #Rails.logger.error msg
-              return nil
+            return nil
           end
-          { :response_code => response.code, :response_xml => response_xml }
+          challenge_session_id = challenge_node_id = nil
+          unless response["challengeSessionId"].nil?
+            challenge_session_id = response["challengeSessionId"]
+            challenge_node_id = response["challengeNodeId"]
+          end
+          { :challenge_session_id => challenge_session_id, :challenge_node_id => challenge_node_id, :response_code => response.code, :response_xml => response_xml }
         end
 
         ##
