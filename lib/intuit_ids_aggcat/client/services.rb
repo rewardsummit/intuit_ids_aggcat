@@ -114,6 +114,20 @@ module IntuitIdsAggcat
           daa = oauth_post_request url, il.save_to_xml.to_s, oauth_token_info, { "challengeSessionId" => challenge_session_id, "challengeNodeId" => challenge_node_id }
           discover_account_data_to_hash daa
         end
+        
+        # needed for follow-up Request to provide challenge data (Update Credentials)
+        # https://developer.intuit.com/docs/0020_customeraccountdata/customer_account_data_api/0020_api_documentation/0075_updateinstitutionlogin
+        def put_challenge_data login_id, username, response, challenge_session_id, challenge_node_id, oauth_token_info = IntuitIdsAggcat::Client::Saml.get_tokens(username), consumer_key = IntuitIdsAggcat.config.oauth_consumer_key, consumer_secret = IntuitIdsAggcat.config.oauth_consumer_secret
+          url = "https://financialdatafeed.platform.intuit.com/v1/logins/#{login_id}"
+          if !(response.kind_of?(Array) || response.respond_to?('each'))
+            response = [response]
+          end
+          cr = IntuitIdsAggcat::ChallengeResponses.new
+          cr.response = response
+          il = IntuitIdsAggcat::InstitutionLogin.new
+          il.challenge_responses = cr
+          daa = oauth_put_request url, oauth_token_info, il.save_to_xml.to_s, { "challengeSessionId" => challenge_session_id, "challengeNodeId" => challenge_node_id }
+        end
 
         ##
         # Gets all accounts for a customer
